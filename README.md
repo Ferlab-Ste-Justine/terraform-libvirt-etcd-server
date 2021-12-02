@@ -234,8 +234,8 @@ You need to setup the permissions in apparmor yourself for it to work.
 
 See the following links for the bug and workaround:
 
-https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/1677398
-https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/1677398/comments/43
+- https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/1677398
+- https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/1677398/comments/43
 
 ### Requisite Outgoing Traffic
 
