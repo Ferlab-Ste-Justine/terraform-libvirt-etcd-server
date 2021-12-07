@@ -7,6 +7,7 @@ locals {
       subnet_prefix_length = var.macvtap_subnet_prefix_length
       vm_ip = var.ip
       gateway_ip = var.macvtap_gateway_ip
+      dns_servers = var.macvtap_dns_servers
     }
   )
 }
@@ -40,7 +41,6 @@ data "template_cloudinit_config" "user_data" {
         ssh_admin_public_key = var.ssh_admin_public_key
         ssh_admin_user = var.ssh_admin_user
         admin_user_password = var.admin_user_password
-        dns_servers = var.dns_servers
       }
     )
   }

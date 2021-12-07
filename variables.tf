@@ -52,6 +52,12 @@ variable "macvtap_gateway_ip" {
   default     = ""
 }
 
+variable "macvtap_dns_servers" {
+  description = "Ip of dns servers to setup on the vm, useful mostly during the initial cloud-init bootstraping to resolve domain of installables. Used for macvtap only."
+  type        = list(string)
+  default     = []
+}
+
 variable "ip" {
   description = "Ip address of the vm"
   type        = string
@@ -164,10 +170,4 @@ variable "bootstrap_authentication" {
   description = "Whether the node should bootstrap authentication for the cluster: creating an admin root user and enabling authentication"
   type        = bool
   default     = false
-}
-
-variable "dns_servers" {
-  description = "Ip of dns servers to setup, useful mostly during the initial cloud-init bootstraping to resolve domain of intallables"
-  type        = list(string)
-  default     = []
 }
