@@ -142,12 +142,6 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
-  #Add dns servers
-%{ if length(dns_servers) > 0 ~}
-  - echo "DNS=${join(" ", dns_servers)}" >> /etc/systemd/resolved.conf
-  - systemctl stop systemd-resolved
-  - systemctl start systemd-resolved
-%{ endif ~}
   #Move etcd tls related files and configuration file in correct directory
   - mkdir -p /etc/etcd/tls
   - mv /opt/ca-cert.pem /opt/cert.pem /opt/key /etc/etcd/tls/

@@ -28,6 +28,7 @@ This module takes the following variables as input:
 - **macvtap_vm_interface_name_match**: Expected pattern of the network interface name in the vm. Defaults to "en*". Used with macvtap only.
 - **macvtap_subnet_prefix_length**: Length of the subnet prefix (ie, the yy in xxx.xxx.xxx.xxx/yy) in the host network. Used with macvtap only.
 - **macvtap_gateway_ip**: Ip of the host network's gateway. Used with macvtap only.
+- **macvtap_dns_servers**: Ip of dns servers that the vm should explicitly use, useful mostly during the initial cloud-init bootstraping to resolve domain of installables. Used for macvtap only.
 - **ip**: Ip of the vm on whichever network it is connected. Note that this isn't an optional parameter. Dhcp cannot be used.
 - **mac**: Mac address of the vm. If none is passed, a random one will be generated.
 - **cloud_init_volume_pool**: Name of the volume pool that will contain the cloud-init volume of the vm.
@@ -163,6 +164,7 @@ module "etcd_alpha" {
   macvtap_interface = var.etcd_alpha_macvtap_interface
   macvtap_subnet_prefix_length = var.etcd_alpha_macvtap_subnet_prefix_length
   macvtap_gateway_ip = var.etcd_alpha_macvtap_gateway_ip
+  macvtap_dns_servers = var.etcd_alpha_dns_servers
   ip = var.etcd_alpha_ip
   cloud_init_volume_pool = libvirt_pool.etcd.name
   ssh_admin_public_key = tls_private_key.etcd_ssh.public_key_openssh
@@ -173,7 +175,6 @@ module "etcd_alpha" {
     certificate = chomp(data.local_file.etcd_ca_cert.content)
   }
   initial_cluster = var.etcd_alpha_initial_cluster
-  dns_servers = var.etcd_alpha_dns_servers
 }
 ```
 

@@ -8,3 +8,7 @@ ethernets:
     addresses:
       - ${vm_ip}/${subnet_prefix_length}
     gateway4: ${gateway_ip}
+%{ if length(dns_servers) > 0 ~}
+    nameservers:
+      addresses: [${join(",", dns_servers)}]
+%{ endif ~}
