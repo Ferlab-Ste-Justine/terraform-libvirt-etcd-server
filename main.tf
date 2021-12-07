@@ -75,6 +75,8 @@ resource "libvirt_domain" "etcd" {
     hostname = var.network_id != "" ? var.name : null
   }
 
+  autostart = true
+
   cloudinit = libvirt_cloudinit_disk.etcd.id
 
   //https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/ubuntu/ubuntu-example.tf#L61
