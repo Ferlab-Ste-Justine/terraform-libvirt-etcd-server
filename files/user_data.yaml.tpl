@@ -19,6 +19,55 @@ users:
     ssh_authorized_keys:
       - "${ssh_admin_public_key}"
 write_files:
+  #Chrony config
+%{ if chrony.enabled ~}
+  - path: /opt/chrony.conf
+    owner: root:root
+    permissions: "0444"
+    content: |
+%{ for server in chrony.servers ~}
+      server ${join(" ", concat([server.url], server.options))}
+%{ endfor ~}
+%{ for pool in chrony.pools ~}
+      pool ${join(" ", concat([pool.url], pool.options))}
+%{ endfor ~}
+      driftfile /var/lib/chrony/drift
+      makestep ${chrony.makestep.threshold} ${chrony.makestep.limit}
+      rtcsync
+%{ endif ~}
+  #Fluentd config
+%{ if fluentd.enabled ~}
+  - path: /opt/fluentd.conf
+    owner: root:root
+    permissions: "0444"
+    content: |
+      ${indent(6, fluentd_conf)}
+  - path: /etc/systemd/system/fluentd.service
+    owner: root:root
+    permissions: "0444"
+    content: |
+      [Unit]
+      Description="Fluentd"
+      Wants=network-online.target
+      After=network-online.target
+      StartLimitIntervalSec=0
+
+      [Service]
+      User=root
+      Group=root
+      Type=simple
+      Restart=always
+      RestartSec=1
+      ExecStart=fluentd -c /opt/fluentd.conf
+
+      [Install]
+      WantedBy=multi-user.target
+  - path: /opt/fluentd_ca.crt
+    owner: root:root
+    permissions: "0444"
+    content: |
+      ${indent(6, fluentd.forward_ca_cert)}
+%{ endif ~}
   #Prometheus node exporter systemd configuration
   - path: /etc/systemd/system/node-exporter.service
     owner: root:root
@@ -140,8 +189,41 @@ write_files:
 
       [Install]
       WantedBy=multi-user.target
-
+packages:
+%{ if fluentd.enabled ~}
+  - ruby-full
+  - build-essential
+%{ endif ~}
+%{ if chrony.enabled ~}
+  - chrony
+%{ endif ~}
 runcmd:
+  #Finalize Chrony Setup
+%{ if chrony.enabled ~}
+  - cp /opt/chrony.conf /etc/chrony/chrony.conf
+  - systemctl restart chrony.service 
+%{ endif ~}
+  #Install prometheus node exporter as a binary managed as a systemd service
+  - wget -O /opt/node_exporter.tar.gz https://github.com/prometheus/node_exporter/releases/download/v1.3.0/node_exporter-1.3.0.linux-amd64.tar.gz
+  - mkdir -p /opt/node_exporter
+  - tar zxvf /opt/node_exporter.tar.gz -C /opt/node_exporter
+  - cp /opt/node_exporter/node_exporter-1.3.0.linux-amd64/node_exporter /usr/local/bin/node_exporter
+  - chown node-exporter:node-exporter /usr/local/bin/node_exporter
+  - rm -r /opt/node_exporter && rm /opt/node_exporter.tar.gz
+  - systemctl enable node-exporter
+  - systemctl start node-exporter
+  #Fluentd setup
+%{ if fluentd.enabled ~}
+  - mkdir -p /opt/fluentd-state
+  - chown root:root /opt/fluentd-state
+  - chmod 0700 /opt/fluentd-state
+  - echo "*.*;auth,authpriv.none @127.0.0.1:5140" >> /etc/rsyslog.conf
+  - systemctl restart syslog
+  - gem install fluentd
+  - gem install fluent-plugin-systemd -v 1.0.5
+  - systemctl enable fluentd.service
+  - systemctl start fluentd.service
+%{ endif ~}
   #Move etcd tls related files and configuration file in correct directory
   - mkdir -p /etc/etcd/tls
   - mv /opt/ca-cert.pem /opt/cert.pem /opt/key /etc/etcd/tls/
@@ -162,15 +244,6 @@ runcmd:
   #State etcd service
   - systemctl enable etcd
   - systemctl start etcd
-  #Install prometheus node exporter as a binary managed as a systemd service
-  - wget -O /opt/node_exporter.tar.gz https://github.com/prometheus/node_exporter/releases/download/v1.0.1/node_exporter-1.0.1.linux-amd64.tar.gz
-  - mkdir -p /opt/node_exporter
-  - tar zxvf /opt/node_exporter.tar.gz -C /opt/node_exporter
-  - cp /opt/node_exporter/node_exporter-1.0.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
-  - chown node-exporter:node-exporter /usr/local/bin/node_exporter
-  - rm -r /opt/node_exporter && rm /opt/node_exporter.tar.gz
-  - systemctl enable node-exporter
-  - systemctl start node-exporter
   #Setup etcd authentication if node selected for that role 
 %{ if bootstrap_authentication ~}
   - /opt/bootstrap_auth.sh

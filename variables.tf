@@ -21,52 +21,31 @@ variable "volume_id" {
   type        = string
 }
 
-variable "network_id" {
-  description = "Id of the libvirt network to connect the vm to if you plan on connecting the vm to a libvirt network"
-  type        = string
-  default     = ""
+variable "libvirt_network" {
+  description = "Parameters of the libvirt network connection if a libvirt network is used. Has the following parameters: network_id, ip, mac"
+  type = object({
+      network_id = string
+      ip = string
+      mac = string
+  })
+  default = {
+      network_id = ""
+      ip = ""
+      mac = ""
+  }
 }
 
-variable "macvtap_interface" {
-  description = "Interface that you plan to connect your vm to via a lower macvtap interface. Note that either this or network_id should be set, but not both."
-  type        = string
-  default     = ""
-}
-
-variable "macvtap_vm_interface_name_match" {
-  description = "Expected pattern of the network interface name in the vm."
-  type        = string
-  //https://github.com/systemd/systemd/blob/main/src/udev/udev-builtin-net_id.c#L932
-  default     = "en*"
-}
-
-variable "macvtap_subnet_prefix_length" {
-  description = "Length of the subnet prefix (ie, the yy in xxx.xxx.xxx.xxx/yy). Used for macvtap only."
-  type        = string
-  default     = ""
-}
-
-variable "macvtap_gateway_ip" {
-  description = "Ip of the physical network's gateway. Used for macvtap only."
-  type        = string
-  default     = ""
-}
-
-variable "macvtap_dns_servers" {
-  description = "Ip of dns servers to setup on the vm, useful mostly during the initial cloud-init bootstraping to resolve domain of installables. Used for macvtap only."
-  type        = list(string)
-  default     = []
-}
-
-variable "ip" {
-  description = "Ip address of the vm"
-  type        = string
-}
-
-variable "mac" {
-  description = "Mac address of the vm"
-  type        = string
-  default     = ""
+variable "macvtap_interfaces" {
+  description = "List of macvtap interfaces. Mutually exclusive with the libvirt_network Field. Each entry has the following keys: interface, prefix_length, ip, mac, gateway and dns_servers"
+  type        = list(object({
+    interface     = string
+    prefix_length = string
+    ip            = string
+    mac           = string
+    gateway       = string
+    dns_servers   = list(string)
+  }))
+  default = []
 }
 
 variable "cloud_init_volume_pool" {
@@ -98,77 +77,124 @@ variable "ssh_admin_public_key" {
   type        = string
 }
 
-variable "etcd_version" {
-  description = "Version of etcd to use in the format: vX.Y.Z"
-  type        = string
-  default     = "v3.4.18"
+variable "etcd" {
+  description = "Etcd parameters"
+  type        = object({
+    version                   = string,
+    auto_compaction_mode      = string,
+    auto_compaction_retention = string,
+    space_quota               = number,
+  })
+  default = {
+    version                   = "v3.4.18"
+    auto_compaction_mode      = "revision"
+    auto_compaction_retention = "1000"
+    space_quota               = 8*1024*1024*1024
+  }
 }
 
-variable "etcd_auto_compaction_mode" {
-  description = "The policy of etcd's auto compaction. Can be either 'periodic' to delete revision older than x or 'revision' to keep at most y revisions"
-  type        = string
-  default     = "revision"
-}
-
-variable "etcd_auto_compaction_retention" {
-  #see for expected format: https://etcd.io/docs/v3.4/op-guide/maintenance/
-  description = "Boundary specifying what revisions should be compacted. Can be a time value for 'periodic' or a number in string format for 'revision'"
-  type        = string
-  default     = "1000"
-}
-
-variable "etcd_space_quota" {
-  description = "Maximum disk space that etcd can take before the cluster goes into alarm mode"
-  type        = number
-  #Defaults to 8GiB
-  default     = 8*1024*1024*1024
-}
-
-variable "is_initial_cluster" {
-  description = "Whether or not this etcd vm is generated as part of a new cluster"
-  type        = bool
-  default     = true
-}
-
-variable "initial_cluster_token" {
-  description = "Initial token given to uniquely identify the new cluster"
-  type        = string
-  default     = "etcd-cluster"
-}
-
-variable "initial_cluster" {
-  description = "List indicating the initial cluster. Each entry in the list should be a map with the following two keys: 'ip' and 'name'. The name should be the same as the 'name' variable passed to each node."
-  type        = list(map(string))
-}
-
-variable "organization" {
-  description = "The etcd cluster's certificates' organization"
-  type        = string
-  default     = "Ferlab"
-}
-
-variable "certificate_validity_period" {
-  description = "The etcd server's certificate's validity period in hours"
-  type        = number
-  #Defaults to 100 years
-  default     = 100*365*24
-}
-
-variable "certificate_early_renewal" {
-  description = "How long before the end of the validity period the certificate should be renewed in hours"
-  type        = number
-  #Defaults to 1 year
-  default     = 365*24
-}
-
-variable "ca" {
-  description = "The ca that will sign the member's certificate. Should have the following keys: key, key_algorithm, certificate"
-  type        = any
-  sensitive   = true
+variable "cluster" {
+  description = "Etcd cluster parameters"
+  type        = object({
+    is_initializing = bool,
+    initial_token   = string,
+    initial_members = list(object({
+      ip   = string,
+      name = string,
+    })),
+  })
 }
 
 variable "bootstrap_authentication" {
   description = "Whether the node should bootstrap authentication for the cluster: creating an admin root user and enabling authentication"
   type        = bool
   default     = false
+}
+
+variable "certificate" {
+  description = "Certificate Parameters"
+  type = object({
+    organization         = string,
+    validity_period      = number,
+    early_renewal_period = number,
+    key_length           = number,
+  })
+  default = {
+    organization         = "Ferlab",
+    validity_period      = 100*365*24,
+    early_renewal_period = 365*24,
+    key_length           = 4096
+  }
+}
+
+variable "ca" {
+  description = "The ca that will sign the member's certificate. Should have the following keys: key, key_algorithm, certificate"
+  sensitive   = true
+  type        = object({
+    key           = string,
+    key_algorithm = string,
+    certificate   = string,
+  })
+}
+
+variable "chrony" {
+  description = "Chrony configuration for ntp. If enabled, chrony is installed and configured, else the default image ntp settings are kept"
+  type        = object({
+    enabled = bool,
+    //https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#server
+    servers = list(object({
+      url = string,
+      options = list(string)
+    })),
+    //https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#pool
+    pools = list(object({
+      url = string,
+      options = list(string)
+    })),
+    //https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#makestep
+    makestep = object({
+      threshold = number,
+      limit = number
+    })
+  })
+  default = {
+    enabled = false
+    servers = []
+    pools = []
+    makestep = {
+      threshold = 0,
+      limit = 0
+    }
+  }
+}
+
+variable "fluentd" {
+  description = "Fluentd configurations"
+  sensitive   = true
+  type = object({
+    enabled = bool,
+    etcd_tag = string,
+    node_exporter_tag = string,
+    syslog_tag = string,
+    forward = object({
+      domain = string,
+      port = number,
+      hostname = string,
+      shared_key = string,
+      ca_cert = string,
+    }),
+  })
+  default = {
+    enabled = false
+    etcd_tag = ""
+    node_exporter_tag = ""
+    syslog_tag = ""
+    forward = {
+      domain = ""
+      port = 0
+      hostname = ""
+      shared_key = ""
+      ca_cert = ""
+    }
+  }
 }

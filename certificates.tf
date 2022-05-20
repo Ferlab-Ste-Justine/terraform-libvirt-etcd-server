@@ -1,18 +1,15 @@
 resource "tls_private_key" "key" {
   algorithm   = "RSA"
-  rsa_bits    = 4096
+  rsa_bits    = var.certificate.key_length
 }
 
 resource "tls_cert_request" "request" {
   key_algorithm   = tls_private_key.key.algorithm
   private_key_pem = tls_private_key.key.private_key_pem
-  ip_addresses    = [
-    var.ip,
-    "127.0.0.1"
-  ]
+  ip_addresses    = concat(local.ips, ["127.0.0.1"])
   subject {
-    common_name  = var.initial_cluster_token
-    organization = var.organization
+    common_name  = var.cluster.initial_token
+    organization = var.certificate.organization
   }
 }
 
@@ -22,8 +19,8 @@ resource "tls_locally_signed_cert" "certificate" {
   ca_private_key_pem = var.ca.key
   ca_cert_pem        = var.ca.certificate
 
-  validity_period_hours = var.certificate_validity_period
-  early_renewal_hours = var.certificate_early_renewal
+  validity_period_hours = var.certificate.validity_period
+  early_renewal_hours = var.certificate.early_renewal_period
 
   allowed_uses = [
     "client_auth",
