@@ -84,12 +84,14 @@ variable "etcd" {
     auto_compaction_mode      = string,
     auto_compaction_retention = string,
     space_quota               = number,
+    grpc_gateway_enabled      = bool,
   })
   default = {
     version                   = "v3.4.18"
     auto_compaction_mode      = "revision"
     auto_compaction_retention = "1000"
     space_quota               = 8*1024*1024*1024
+    grpc_gateway_enabled      = false
   }
 }
 

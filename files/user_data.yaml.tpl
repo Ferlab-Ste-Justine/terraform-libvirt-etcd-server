@@ -167,6 +167,11 @@ write_files:
         cert-file: /etc/etcd/tls/cert.pem
         key-file: /etc/etcd/tls/key
         client-cert-auth: true
+%{ if etcd_grpc_gateway_enabled ~}
+      enable-grpc-gateway: true
+%{ else ~}
+      enable-grpc-gateway: false
+%{ endif ~}
   #Etcd systemd configuration
   - path: /etc/systemd/system/etcd.service
     owner: root:root
