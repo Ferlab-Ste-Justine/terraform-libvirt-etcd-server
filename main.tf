@@ -46,7 +46,7 @@ data "template_cloudinit_config" "user_data" {
         etcd_auto_compaction_retention = var.etcd.auto_compaction_retention
         etcd_grpc_gateway_enabled = var.etcd.grpc_gateway_enabled
         etcd_initial_cluster_token = var.cluster.initial_token
-        etcd_mandatory_client_cert_auth = var.etcd.mandatory_client_cert_auth
+        etcd_client_cert_auth = var.etcd.client_cert_auth
         self_ip = local.ips.0
         etcd_initial_cluster_state = var.cluster.is_initializing ? "new" : "existing"
         etcd_name = var.name
@@ -57,7 +57,8 @@ data "template_cloudinit_config" "user_data" {
         ca_cert = var.ca.certificate
         cert = "${tls_locally_signed_cert.certificate.cert_pem}\n${var.ca.certificate}"
         key = tls_private_key.key.private_key_pem
-        bootstrap_authentication = var.bootstrap_authentication
+        bootstrap_authentication = var.authentication_bootstrap.bootstrap
+        root_password = var.authentication_bootstrap.root_password
         root_key = module.root_certificate.key
         root_cert = module.root_certificate.certificate
         ssh_admin_public_key = var.ssh_admin_public_key

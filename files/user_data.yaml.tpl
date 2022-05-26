@@ -125,7 +125,11 @@ write_files:
       ROOT_USER=""
       while [ "$ROOT_USER" != "root" ]; do
           sleep 1
+%{ if etcd_client_cert_auth ~}
           etcdctl user add --no-password --cacert=/etc/etcd/tls/ca-cert.pem --endpoints=https://127.0.0.1:2379 --insecure-transport=false --cert=/opt/root_cert.pem --key=/opt/root_key root
+%{ else ~}
+          etcdctl user add --new-user-password="${root_password}" --cacert=/etc/etcd/tls/ca-cert.pem --endpoints=https://127.0.0.1:2379 --insecure-transport=false --cert=/opt/root_cert.pem --key=/opt/root_key root
+%{ endif ~}
           ROOT_USER=$(etcdctl user list --cacert=/etc/etcd/tls/ca-cert.pem --endpoints=https://127.0.0.1:2379 --insecure-transport=false --cert=/opt/root_cert.pem --key=/opt/root_key | grep root)
       done
       ROOT_ROLES=""
@@ -166,7 +170,7 @@ write_files:
         trusted-ca-file: /etc/etcd/tls/ca-cert.pem
         cert-file: /etc/etcd/tls/cert.pem
         key-file: /etc/etcd/tls/key
-        client-cert-auth: ${etcd_mandatory_client_cert_auth}
+        client-cert-auth: ${etcd_client_cert_auth}
 %{ if etcd_grpc_gateway_enabled ~}
       enable-grpc-gateway: true
 %{ else ~}

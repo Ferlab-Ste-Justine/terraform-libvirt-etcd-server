@@ -34,4 +34,4 @@ module "root_certificate" {
   source = "git::https://github.com/Ferlab-Ste-Justine/openstack-etcd-client-certificate.git"
   ca = var.ca
   username = "root"
-} 
+}

@@ -85,15 +85,27 @@ variable "etcd" {
     auto_compaction_retention  = string,
     space_quota                = number,
     grpc_gateway_enabled       = bool,
-    mandatory_client_cert_auth = bool,
+    client_cert_auth           = bool,
   })
   default = {
-    version                    = "v3.4.18"
-    auto_compaction_mode       = "revision"
-    auto_compaction_retention  = "1000"
-    space_quota                = 8*1024*1024*1024
-    grpc_gateway_enabled       = false
-    mandatory_client_cert_auth = true
+    version                   = "v3.4.18"
+    auto_compaction_mode      = "revision"
+    auto_compaction_retention = "1000"
+    space_quota               = 8*1024*1024*1024
+    grpc_gateway_enabled      = false
+    client_cert_auth          = true
+  }
+}
+
+variable "authentication_bootstrap" {
+  description = "Authentication settings for the node bootstrapping it. Note that root_password is only used if etcd.client_cert_auth setting is set to false"
+  type        = object({
+    bootstrap     = bool,
+    root_password = string,
+  })
+  default = {
+    bootstrap     = false
+    root_password = ""
   }
 }
 
@@ -109,12 +121,6 @@ variable "cluster" {
   })
 }
 
-variable "bootstrap_authentication" {
-  description = "Whether the node should bootstrap authentication for the cluster: creating an admin root user and enabling authentication"
-  type        = bool
-  default     = false
-}
-
 variable "certificate" {
   description = "Certificate Parameters"
   type = object({
@@ -124,9 +130,9 @@ variable "certificate" {
     key_length           = number,
   })
   default = {
-    organization         = "Ferlab",
-    validity_period      = 100*365*24,
-    early_renewal_period = 365*24,
+    organization         = "Ferlab"
+    validity_period      = 100*365*24
+    early_renewal_period = 365*24
     key_length           = 4096
   }
 }
@@ -166,7 +172,7 @@ variable "chrony" {
     servers = []
     pools = []
     makestep = {
-      threshold = 0,
+      threshold = 0
       limit = 0
     }
   }
