@@ -46,6 +46,7 @@ data "template_cloudinit_config" "user_data" {
         etcd_auto_compaction_retention = var.etcd.auto_compaction_retention
         etcd_grpc_gateway_enabled = var.etcd.grpc_gateway_enabled
         etcd_initial_cluster_token = var.cluster.initial_token
+        etcd_mandatory_client_cert_auth = var.etcd.mandatory_client_cert_auth
         self_ip = local.ips.0
         etcd_initial_cluster_state = var.cluster.is_initializing ? "new" : "existing"
         etcd_name = var.name

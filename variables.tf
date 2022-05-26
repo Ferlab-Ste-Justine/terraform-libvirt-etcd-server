@@ -80,18 +80,20 @@ variable "ssh_admin_public_key" {
 variable "etcd" {
   description = "Etcd parameters"
   type        = object({
-    version                   = string,
-    auto_compaction_mode      = string,
-    auto_compaction_retention = string,
-    space_quota               = number,
-    grpc_gateway_enabled      = bool,
+    version                    = string,
+    auto_compaction_mode       = string,
+    auto_compaction_retention  = string,
+    space_quota                = number,
+    grpc_gateway_enabled       = bool,
+    mandatory_client_cert_auth = bool,
   })
   default = {
-    version                   = "v3.4.18"
-    auto_compaction_mode      = "revision"
-    auto_compaction_retention = "1000"
-    space_quota               = 8*1024*1024*1024
-    grpc_gateway_enabled      = false
+    version                    = "v3.4.18"
+    auto_compaction_mode       = "revision"
+    auto_compaction_retention  = "1000"
+    space_quota                = 8*1024*1024*1024
+    grpc_gateway_enabled       = false
+    mandatory_client_cert_auth = true
   }
 }
 

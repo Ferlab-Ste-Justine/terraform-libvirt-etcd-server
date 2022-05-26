@@ -166,7 +166,7 @@ write_files:
         trusted-ca-file: /etc/etcd/tls/ca-cert.pem
         cert-file: /etc/etcd/tls/cert.pem
         key-file: /etc/etcd/tls/key
-        client-cert-auth: true
+        client-cert-auth: ${etcd_mandatory_client_cert_auth}
 %{ if etcd_grpc_gateway_enabled ~}
       enable-grpc-gateway: true
 %{ else ~}
