@@ -54,7 +54,7 @@ data "template_cloudinit_config" "user_data" {
           [for elem in var.cluster.initial_members: "${elem["name"]}=https://${elem["ip"]}:2380"]
         )
         ca_cert = var.ca.certificate
-        cert = tls_locally_signed_cert.certificate.cert_pem
+        cert = "${tls_locally_signed_cert.certificate.cert_pem}\n${var.ca.certificate}"
         key = tls_private_key.key.private_key_pem
         bootstrap_authentication = var.bootstrap_authentication
         root_key = module.root_certificate.key
