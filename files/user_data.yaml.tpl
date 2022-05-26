@@ -167,7 +167,9 @@ write_files:
         key-file: /etc/etcd/tls/key
         client-cert-auth: true
       client-transport-security:
+%{ if etcd_client_cert_auth ~}
         trusted-ca-file: /etc/etcd/tls/ca-cert.pem
+%{ endif ~}
         cert-file: /etc/etcd/tls/cert.pem
         key-file: /etc/etcd/tls/key
         client-cert-auth: ${etcd_client_cert_auth}
