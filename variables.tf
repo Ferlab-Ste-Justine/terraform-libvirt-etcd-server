@@ -182,17 +182,21 @@ variable "fluentd" {
   description = "Fluentd configurations"
   sensitive   = true
   type = object({
-    enabled = bool,
-    etcd_tag = string,
-    node_exporter_tag = string,
-    syslog_tag = string,
+    enabled = bool
+    etcd_tag = string
+    node_exporter_tag = string
+    syslog_tag = string
     forward = object({
-      domain = string,
-      port = number,
-      hostname = string,
-      shared_key = string,
-      ca_cert = string,
+      domain = string
+      port = number
+      hostname = string
+      shared_key = string
+      ca_cert = string
     }),
+    buffer = object({
+      customized = bool
+      custom_value = string
+    })
   })
   default = {
     enabled = false
@@ -205,6 +209,10 @@ variable "fluentd" {
       hostname = ""
       shared_key = ""
       ca_cert = ""
+    }
+    buffer = {
+      customized = false
+      custom_value = ""
     }
   }
 }
