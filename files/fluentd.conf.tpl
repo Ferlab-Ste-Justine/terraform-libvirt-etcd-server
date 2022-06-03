@@ -28,16 +28,6 @@
   </storage>
 </source>
 
-<source>
-  @type syslog
-  tag ${fluentd.syslog_tag}
-  port 5140
-  bind 127.0.0.1
-
-  <transport tcp>
-  </transport>
-</source>
-
 <match *>
   @type forward
   transport tls

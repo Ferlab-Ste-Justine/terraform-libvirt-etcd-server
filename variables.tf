@@ -185,7 +185,6 @@ variable "fluentd" {
     enabled = bool
     etcd_tag = string
     node_exporter_tag = string
-    syslog_tag = string
     forward = object({
       domain = string
       port = number
@@ -202,7 +201,6 @@ variable "fluentd" {
     enabled = false
     etcd_tag = ""
     node_exporter_tag = ""
-    syslog_tag = ""
     forward = {
       domain = ""
       port = 0
