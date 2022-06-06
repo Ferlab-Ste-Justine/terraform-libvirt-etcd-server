@@ -62,6 +62,7 @@ This module takes the following variables as input:
   - **validity_period**: Validity period of the generated certificates in hours.
   - **early_renewal_period**: How long before the end of the validity period should terraform force the generated of a new certificate in hours.
   - **key_length**: Lenght of the RSA private key part of the server certificates.
+  - **extra_domains**: List of additional domains to include in the certificate.
 - **ca**: Configuration for the (pre-existing) ca that will be used to generate the server certificates. It contains the following keys:
   - **key**: Private key of the ca
   - **key_algorithm**: Algorithmn of the ca's private key

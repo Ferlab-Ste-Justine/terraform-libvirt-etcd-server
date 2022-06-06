@@ -124,16 +124,18 @@ variable "cluster" {
 variable "certificate" {
   description = "Certificate Parameters"
   type = object({
-    organization         = string,
-    validity_period      = number,
-    early_renewal_period = number,
-    key_length           = number,
+    organization         = string
+    validity_period      = number
+    early_renewal_period = number
+    key_length           = number
+    extra_domains        = list(string)
   })
   default = {
     organization         = "Ferlab"
     validity_period      = 100*365*24
     early_renewal_period = 365*24
     key_length           = 4096
+    extra_domains        = []
   }
 }
 
@@ -141,9 +143,9 @@ variable "ca" {
   description = "The ca that will sign the member's certificate. Should have the following keys: key, key_algorithm, certificate"
   sensitive   = true
   type        = object({
-    key           = string,
-    key_algorithm = string,
-    certificate   = string,
+    key           = string
+    key_algorithm = string
+    certificate   = string
   })
 }
 
@@ -163,7 +165,7 @@ variable "chrony" {
     })),
     //https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#makestep
     makestep = object({
-      threshold = number,
+      threshold = number
       limit = number
     })
   })

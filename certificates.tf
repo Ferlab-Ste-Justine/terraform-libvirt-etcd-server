@@ -7,6 +7,7 @@ resource "tls_cert_request" "request" {
   key_algorithm   = tls_private_key.key.algorithm
   private_key_pem = tls_private_key.key.private_key_pem
   ip_addresses    = concat(local.ips, ["127.0.0.1"])
+  dns_names       = var.certificate.extra_domains
   subject {
     common_name  = var.cluster.initial_token
     organization = var.certificate.organization
