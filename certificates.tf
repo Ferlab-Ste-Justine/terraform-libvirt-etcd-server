@@ -4,7 +4,6 @@ resource "tls_private_key" "key" {
 }
 
 resource "tls_cert_request" "request" {
-  key_algorithm   = tls_private_key.key.algorithm
   private_key_pem = tls_private_key.key.private_key_pem
   ip_addresses    = concat(local.ips, ["127.0.0.1"])
   dns_names       = var.certificate.extra_domains
@@ -16,7 +15,6 @@ resource "tls_cert_request" "request" {
 
 resource "tls_locally_signed_cert" "certificate" {
   cert_request_pem   = tls_cert_request.request.cert_request_pem
-  ca_key_algorithm   = var.ca.key_algorithm
   ca_private_key_pem = var.ca.key
   ca_cert_pem        = var.ca.certificate
 
@@ -32,7 +30,7 @@ resource "tls_locally_signed_cert" "certificate" {
 }
 
 module "root_certificate" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/openstack-etcd-client-certificate.git"
+  source = "git::https://github.com/Ferlab-Ste-Justine/etcd-client-certificate.git"
   ca = var.ca
   username = "root"
 }
