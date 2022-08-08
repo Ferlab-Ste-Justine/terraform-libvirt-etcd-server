@@ -30,7 +30,7 @@ resource "tls_locally_signed_cert" "certificate" {
 }
 
 module "root_certificate" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/openstack-etcd-client-certificate.git"
+  source = "git::https://github.com/Ferlab-Ste-Justine/etcd-client-certificate.git"
   ca = var.ca
   username = "root"
 }
