@@ -80,7 +80,6 @@ variable "ssh_admin_public_key" {
 variable "etcd" {
   description = "Etcd parameters"
   type        = object({
-    version                    = string,
     auto_compaction_mode       = string,
     auto_compaction_retention  = string,
     space_quota                = number,
@@ -88,7 +87,6 @@ variable "etcd" {
     client_cert_auth           = bool,
   })
   default = {
-    version                   = "v3.4.18"
     auto_compaction_mode      = "revision"
     auto_compaction_retention = "1000"
     space_quota               = 8*1024*1024*1024
@@ -215,4 +213,10 @@ variable "fluentd" {
       custom_value = ""
     }
   }
+}
+
+variable "install_dependencies" {
+  description = "Whether to install all dependencies in cloud-init"
+  type = bool
+  default = true
 }
