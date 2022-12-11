@@ -88,45 +88,55 @@ module "fluentd_configs" {
   }
 }
 
+locals {
+  cloudinit_templates = concat([
+      {
+        filename     = "base.cfg"
+        content_type = "text/cloud-config"
+        content = templatefile(
+          "${path.module}/files/user_data.yaml.tpl", 
+          {
+            hostname = var.name
+            ssh_admin_public_key = var.ssh_admin_public_key
+            ssh_admin_user = var.ssh_admin_user
+            admin_user_password = var.admin_user_password
+          }
+        )
+      },
+      {
+        filename     = "etcd.cfg"
+        content_type = "text/cloud-config"
+        content      = module.etcd_configs.configuration
+      },
+      {
+        filename     = "node_exporter.cfg"
+        content_type = "text/cloud-config"
+        content      = module.prometheus_node_exporter_configs.configuration
+      }
+    ],
+    var.chrony.enabled ? [{
+      filename     = "chrony.cfg"
+      content_type = "text/cloud-config"
+      content      = module.chrony_configs.configuration
+    }] : [],
+    var.fluentd.enabled ? [{
+      filename     = "fluentd.cfg"
+      content_type = "text/cloud-config"
+      content      = module.fluentd_configs.configuration
+    }] : [],
+  )
+}
+
 data "template_cloudinit_config" "user_data" {
   gzip = false
   base64_encode = false
-  part {
-    filename     = "base.cfg"
-    content_type = "text/cloud-config"
-    content = templatefile(
-      "${path.module}/files/user_data.yaml.tpl", 
-      {
-        hostname = var.name
-        ssh_admin_public_key = var.ssh_admin_public_key
-        ssh_admin_user = var.ssh_admin_user
-        admin_user_password = var.admin_user_password
-      }
-    )
-  }
-
-  part {
-    filename     = "etcd.cfg"
-    content_type = "text/cloud-config"
-    content      = module.etcd_configs.configuration
-  }
-
-  part {
-    filename     = "node_exporter.cfg"
-    content_type = "text/cloud-config"
-    content      = module.prometheus_node_exporter_configs.configuration
-  }
-
-  part {
-    filename     = "chrony.cfg"
-    content_type = "text/cloud-config"
-    content      = module.chrony_configs.configuration
-  }
-
-  part {
-    filename     = "fluentd.cfg"
-    content_type = "text/cloud-config"
-    content      = module.fluentd_configs.configuration
+  dynamic "part" {
+    for_each = local.cloudinit_templates
+    content {
+      filename     = part.value["filename"]
+      content_type = part.value["content_type"]
+      content      = part.value["content"]
+    }
   }
 }
 
