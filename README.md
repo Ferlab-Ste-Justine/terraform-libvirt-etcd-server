@@ -83,6 +83,7 @@ This module takes the following variables as input:
   - **buffer**: Configuration for the buffering of outgoing fluentd traffic
     - **customized**: Set to false to use the default buffering configurations. If you wish to customize it, set this to true.
     - **custom_value**: Custom buffering configuration to provide that will override the default one. Should be valid fluentd configuration syntax, including the opening and closing ```<buffer>``` tags.
+- **install_dependencies**: Whether cloud-init should install external dependencies (should be set to false if you already provide an image with the external dependencies built-in).
 
 ## Example
 
