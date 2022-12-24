@@ -28,9 +28,3 @@ resource "tls_locally_signed_cert" "certificate" {
 
   is_ca_certificate = false
 }
-
-module "root_certificate" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/etcd-client-certificate.git"
-  ca = var.ca
-  username = "root"
-}

@@ -16,7 +16,6 @@ You can alternatively user username/password authentication.
 
 This module supports both libvirt networks and direct macvtap connection (bridge mode) and was validated with both setups.
 
-
 # Usage
 
 ## Variables
@@ -44,7 +43,6 @@ This module takes the following variables as input:
 - **admin_user_password**: Optional password for the default sudo user of the image. Note that this will not enable ssh password connections, but it will allow you to log into the vm from the host using the **virsh console** command.
 - **ssh_admin_public_key**: Public part of the ssh key the admin will be able to login as
 - **etcd**: Etcd configuration. It should be the same on each member of the cluster and have the following keys:
-  - **version**: Version of etcd that should be install. Defaults to **v3.4.18** and this is the version this module was validated against. Your mileage may vary with other versions.
   - **auto_compaction_mode**: The kind of auto compaction to use. Can be **periodic** or **revision** (defaults to **revision**). See: https://etcd.io/docs/v3.4/op-guide/maintenance/
   - **auto_compaction_retention**: Specifies what versions will be preserved during auto compaction given the **auto_compaction_mode**. Defaults to **1000** (if the defaults are kept, the last 1000 revisions will be preserved and all revisions older than that will be fair game for compaction)
   - **space_quota**: The maximum disk space the etcd instance can use before the cluster hits **panic mode** and becomes **read only**. Given that etcd tries to cache all its key values in the memory for performance reasons, it make sense not to make this much greater than the amount of memory you have on the machine (because of fragmentation, a key space that fits in the memory could theoretically take an amount of disk space that is larger than the amount of memory). Defaults to 8GiB.
@@ -85,7 +83,7 @@ This module takes the following variables as input:
   - **buffer**: Configuration for the buffering of outgoing fluentd traffic
     - **customized**: Set to false to use the default buffering configurations. If you wish to customize it, set this to true.
     - **custom_value**: Custom buffering configuration to provide that will override the default one. Should be valid fluentd configuration syntax, including the opening and closing ```<buffer>``` tags.
-
+- **install_dependencies**: Whether cloud-init should install external dependencies (should be set to false if you already provide an image with the external dependencies built-in).
 
 ## Example
 
