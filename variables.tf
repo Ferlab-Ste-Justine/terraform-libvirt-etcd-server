@@ -24,11 +24,13 @@ variable "volume_id" {
 variable "libvirt_network" {
   description = "Parameters of the libvirt network connection if a libvirt network is used. Has the following parameters: network_id, ip, mac"
   type = object({
+      network_name = string
       network_id = string
       ip = string
       mac = string
   })
   default = {
+      network_name = ""
       network_id = ""
       ip = ""
       mac = ""
