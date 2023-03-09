@@ -26,6 +26,7 @@ This module takes the following variables as input:
 - **vcpus**: Number of vcpus to assign to the vm. Defaults to 2.
 - **memory**: Amount of memory in MiB to assign to the vm. Defaults to 8192.
 - **volume_id**: Id of the image volume to attach to the vm. A recent version of ubuntu is recommended as this is what this module has been validated against.
+- **data_volume_id**: Id for an optional separate disk volume to attach to the vm on etcd's data path
 - **libvirt_network**: Parameters to connect to a libvirt network if you opt for that instead of macvtap interfaces. In has the following keys:
   - **ip**: Ip of the vm.
   - **mac**: Mac address of the vm. If none is passed, a random one will be generated.
