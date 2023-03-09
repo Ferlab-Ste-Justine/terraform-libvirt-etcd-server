@@ -6,10 +6,13 @@ merge_how:
    settings: [no_replace, recurse_list]
 
 %{ if admin_user_password != "" ~}
+ssh_pwauth: false
 chpasswd:
-  list: |
-     ${ssh_admin_user}:${admin_user_password}
   expire: False
+  users:
+    - name: ${ssh_admin_user}
+      password: "${admin_user_password}"
+      type: text
 %{ endif ~}
 preserve_hostname: false
 hostname: ${hostname}
