@@ -49,11 +49,7 @@ module "etcd_configs" {
     token           = var.cluster.initial_token
     members         = var.cluster.initial_members
   }
-  tls = {
-    server_cert = "${tls_locally_signed_cert.certificate.cert_pem}\n${var.ca.certificate}"
-    server_key  = tls_private_key.key.private_key_pem
-    ca_cert     = var.ca.certificate
-  }
+  tls = var.tls
 }
 
 module "prometheus_node_exporter_configs" {
@@ -71,24 +67,24 @@ module "chrony_configs" {
   }
 }
 
-module "fluentd_configs" {
-  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//fluentd?ref=main"
+module "fluentbit_configs" {
+  source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//fluent-bit?ref=main"
   install_dependencies = var.install_dependencies
-  fluentd = {
-    docker_services = []
+  fluentbit = {
+    metrics = var.fluentbit.metrics
     systemd_services = [
       {
-        tag     = var.fluentd.etcd_tag
-        service = "etcd"
+        tag     = var.fluentbit.etcd_tag
+        service = "etcd.service"
       },
       {
-        tag     = var.fluentd.node_exporter_tag
-        service = "node-exporter"
+        tag     = var.fluentbit.node_exporter_tag
+        service = "node-exporter.service"
       }
     ]
-    forward = var.fluentd.forward,
-    buffer = var.fluentd.buffer
+    forward = var.fluentbit.forward
   }
+  etcd    = var.fluentbit.etcd
 }
 
 module "data_volume_configs" {
@@ -133,10 +129,10 @@ locals {
       content_type = "text/cloud-config"
       content      = module.chrony_configs.configuration
     }] : [],
-    var.fluentd.enabled ? [{
-      filename     = "fluentd.cfg"
+    var.fluentbit.enabled ? [{
+      filename     = "fluent_bit.cfg"
       content_type = "text/cloud-config"
-      content      = module.fluentd_configs.configuration
+      content      = module.fluentbit_configs.configuration
     }] : [],
     var.data_volume_id != "" ? [{
       filename     = "data_volume.cfg"
