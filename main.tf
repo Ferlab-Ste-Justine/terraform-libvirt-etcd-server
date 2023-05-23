@@ -49,11 +49,7 @@ module "etcd_configs" {
     token           = var.cluster.initial_token
     members         = var.cluster.initial_members
   }
-  tls = {
-    server_cert = "${tls_locally_signed_cert.certificate.cert_pem}\n${var.ca.certificate}"
-    server_key  = tls_private_key.key.private_key_pem
-    ca_cert     = var.ca.certificate
-  }
+  tls = var.tls
 }
 
 module "prometheus_node_exporter_configs" {
