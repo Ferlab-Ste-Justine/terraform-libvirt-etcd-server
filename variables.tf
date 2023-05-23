@@ -186,29 +186,45 @@ variable "chrony" {
   }
 }
 
-variable "fluentd" {
-  description = "Fluentd configurations"
-  sensitive   = true
+variable "fluentbit" {
+  description = "Fluent-bit configuration"
+  sensitive = true
   type = object({
     enabled = bool
     etcd_tag = string
     node_exporter_tag = string
+    metrics = object({
+      enabled = bool
+      port    = number
+    })
     forward = object({
       domain = string
       port = number
       hostname = string
       shared_key = string
       ca_cert = string
-    }),
-    buffer = object({
-      customized = bool
-      custom_value = string
+    })
+    etcd = object({
+      enabled = bool
+      key_prefix = string
+      endpoints = list(string)
+      ca_certificate = string
+      client = object({
+        certificate = string
+        key = string
+        username = string
+        password = string
+      })
     })
   })
   default = {
     enabled = false
     etcd_tag = ""
     node_exporter_tag = ""
+    metrics = {
+      enabled = false
+      port = 0
+    }
     forward = {
       domain = ""
       port = 0
@@ -216,9 +232,17 @@ variable "fluentd" {
       shared_key = ""
       ca_cert = ""
     }
-    buffer = {
-      customized = false
-      custom_value = ""
+    etcd = {
+      enabled = false
+      key_prefix = ""
+      endpoints = []
+      ca_certificate = ""
+      client = {
+        certificate = ""
+        key = ""
+        username = ""
+        password = ""
+      }
     }
   }
 }
