@@ -25,7 +25,14 @@ locals {
 
 module "network_configs" {
   source = "git::https://github.com/Ferlab-Ste-Justine/terraform-cloudinit-templates.git//network?ref=main"
-  network_interfaces = var.macvtap_interfaces
+  network_interfaces = length(var.macvtap_interfaces) == 0 ? [{
+    ip = ""
+    gateway = ""
+    prefix_length = ""
+    interface = ""
+    mac = var.libvirt_network.mac
+    dns_servers = var.libvirt_network.dns_servers
+  }] : var.macvtap_interfaces
 }
 
 module "etcd_configs" {
@@ -158,7 +165,7 @@ data "template_cloudinit_config" "user_data" {
 resource "libvirt_cloudinit_disk" "etcd" {
   name           = local.cloud_init_volume_name
   user_data      = data.template_cloudinit_config.user_data.rendered
-  network_config = length(var.macvtap_interfaces) > 0 ? module.network_configs.configuration : null
+  network_config = module.network_configs.configuration
   pool           = var.cloud_init_volume_pool
 }
 
