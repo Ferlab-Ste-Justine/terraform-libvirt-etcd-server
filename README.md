@@ -30,8 +30,8 @@ This module takes the following variables as input:
 - **libvirt_network**: Parameters to connect to libvirt networks. Note that etcd will only bind on and listen on the first interface (be it macvtap or libvirt network) on its list. It is an array of objects, each having the following keys:
   - **network_id**: Id (ie, uuid) of the libvirt network to connect to (in which case **network_name** should be an empty string).
   - **network_name**: Name of the libvirt network to connect to (in which case **network_id** should be an empty string).
-  - **ip**: Ip of the vm.
-  - **mac**: Mac address of the vm.
+  - **ip**: Ip of interface connecting to the libvirt network.
+  - **mac**: Mac address of interface connecting to the libvirt network.
   - **prefix_length**:  Length of the network prefix for the network the interface will be connected to. For a **192.168.1.0/24** for example, this would be **24**.
   - **gateway**: Ip of the network's gateway. Usually the gateway the first assignable address of a libvirt's network.
   - **dns_servers**: Dns servers to use. Usually the dns server is first assignable address of a libvirt's network.
