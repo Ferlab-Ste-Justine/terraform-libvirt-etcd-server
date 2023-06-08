@@ -27,13 +27,15 @@ This module takes the following variables as input:
 - **memory**: Amount of memory in MiB to assign to the vm. Defaults to 8192.
 - **volume_id**: Id of the image volume to attach to the vm. A recent version of ubuntu is recommended as this is what this module has been validated against.
 - **data_volume_id**: Id for an optional separate disk volume to attach to the vm on etcd's data path
-- **libvirt_network**: Parameters to connect to a libvirt network if you opt for that instead of macvtap interfaces. In has the following keys:
-  - **ip**: Ip of the vm.
-  - **mac**: Mac address of the vm. If none is passed, a random one will be generated.
+- **libvirt_network**: Parameters to connect to libvirt networks. Note that etcd will only bind on and listen on the first interface (be it macvtap or libvirt network) on its list. It is an array of objects, each having the following keys:
   - **network_id**: Id (ie, uuid) of the libvirt network to connect to (in which case **network_name** should be an empty string).
   - **network_name**: Name of the libvirt network to connect to (in which case **network_id** should be an empty string).
-  - **dns_servers**: Dns servers to use if you wish to override the default dns server provided by the libvirt network.
-- **macvtap_interfaces**: List of macvtap interfaces to connect the vm to if you opt for macvtap interfaces instead of a libvirt network. Note that etcd will only bind on and listen on the mapvtap interface of the list. Each entry in the list is a map with the following keys:
+  - **ip**: Ip of the vm.
+  - **mac**: Mac address of the vm.
+  - **prefix_length**:  Length of the network prefix for the network the interface will be connected to. For a **192.168.1.0/24** for example, this would be **24**.
+  - **gateway**: Ip of the network's gateway. Usually the gateway the first assignable address of a libvirt's network.
+  - **dns_servers**: Dns servers to use. Usually the dns server is first assignable address of a libvirt's network.
+- **macvtap_interfaces**: List of macvtap interfaces to connect the vm to. Note that etcd will only bind on and listen on the first interface (be it macvtap or libvirt network) on its list. Each entry in the list is a map with the following keys:
   - **interface**: Host network interface that you plan to connect your macvtap interface with.
   - **prefix_length**: Length of the network prefix for the network the interface will be connected to. For a **192.168.1.0/24** for example, this would be **24**.
   - **ip**: Ip associated with the macvtap interface. 
@@ -162,10 +164,15 @@ module "etcd_1" {
   vcpus = tonumber(var.etcd_alpha_vcpus)
   memory = tonumber(var.etcd_alpha_memory)
   volume_id = libvirt_volume.etcd_1.id
-  libvirt_network = {
-    network_id = var.etcd_alpha_network_id
+  libvirt_networks = [{
+    network_id = ""
+    network_name = "mynetwork"
     ip = "192.168.121.4"
-  }
+    mac = "aa:00:00:00:00:00"
+    gateway = "192.168.121.1"
+    dns_servers = ["192.168.121.1"]
+    prefix_length = 24
+  }]
   cloud_init_volume_pool = libvirt_pool.etcd.name
   ssh_admin_public_key = tls_private_key.etcd_ssh.public_key_openssh
   tls = {
@@ -196,10 +203,15 @@ module "etcd_2" {
   vcpus = tonumber(var.etcd_alpha_vcpus)
   memory = tonumber(var.etcd_alpha_memory)
   volume_id = libvirt_volume.etcd_2.id
-  libvirt_network = {
-    network_id = var.etcd_alpha_network_id
+  libvirt_networks = [{
+    network_id = ""
+    network_name = "mynetwork"
     ip = "192.168.121.5"
-  }
+    mac = "aa:00:00:00:00:01"
+    gateway = "192.168.121.1"
+    dns_servers = ["192.168.121.1"]
+    prefix_length = 24
+  }]
   cloud_init_volume_pool = libvirt_pool.etcd.name
   ssh_admin_public_key = tls_private_key.etcd_ssh.public_key_openssh
   tls = {
@@ -230,10 +242,15 @@ module "etcd_3" {
   vcpus = tonumber(var.etcd_alpha_vcpus)
   memory = tonumber(var.etcd_alpha_memory)
   volume_id = libvirt_volume.etcd_3.id
-  libvirt_network = {
-    network_id = var.etcd_alpha_network_id
+  libvirt_networks = [{
+    network_id = ""
+    network_name = "mynetwork"
     ip = "192.168.121.6"
-  }
+    mac = "aa:00:00:00:00:02"
+    gateway = "192.168.121.1"
+    dns_servers = ["192.168.121.1"]
+    prefix_length = 24
+  }]
   cloud_init_volume_pool = libvirt_pool.etcd.name
   ssh_admin_public_key = tls_private_key.etcd_ssh.public_key_openssh
   tls = {
