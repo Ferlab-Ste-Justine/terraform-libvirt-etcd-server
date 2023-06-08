@@ -42,7 +42,7 @@ variable "libvirt_networks" {
 }
 
 variable "macvtap_interfaces" {
-  description = "List of macvtap interfaces. Mutually exclusive with the libvirt_network Field. Each entry has the following keys: interface, prefix_length, ip, mac, gateway and dns_servers"
+  description = "List of macvtap interfaces."
   type        = list(object({
     interface     = string
     prefix_length = string
