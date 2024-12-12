@@ -2,15 +2,15 @@
 
 This is a terraform module that provisions a single member of an etcd cluster.
 
-Given a certificate authority as argument (can be an internal-only self-signed authority), it will generate its own secret key and certificate to communicate peers in the cluster and also with clients if certificate authentication is chosen.
+One of the servers should initially be set to bootstrap authentication in the cluster: it will generates a **root** (passwordless if certificate authentication is chosen) user and enable authentication. 
 
-One of the servers can also be set to bootstrap authentication in the cluster: it will generates a **root** (passwordless if certificate authentication is chosen) user and enable authentication. 
-
-Note that if certificate authentication is chosen, you are expected to use your certificate authority to generate a client user certificate for **root** to further configure your etcd cluster.
+It supports either password or certificate authentication for the client. If if certificate authentication is chosen, you are expected to use your certificate authority to generate a client user certificate for **root** to further configure your etcd cluster.
 
 See: https://github.com/Ferlab-Ste-Justine/openstack-etcd-client-certificate
 
-You can alternatively user username/password authentication.
+And all communications (between the nodes and also with the client) are setup to happen in tls.
+
+The nodes can also be setup to restore from a snapshot in s3, encrypted or in plaintext. The expected format of the backup is dictated by the following project (and it is the tool that is used to perform a restore): https://github.com/Ferlab-Ste-Justine/etcd-backup
 
 # Libvirt Networking Support
 
@@ -64,6 +64,18 @@ This module takes the following variables as input:
   - **ca_cert**: CA certificate that will be used to validate the authenticity of peers and clients.
   - **server_cert**: Server certificate that will be used to authentify the server to its peers and to clients. In addition to being signed for all the ips and domains the server will use, it should be signed with the **127.0.0.1** loopback address in order to initialize authentication from one of the servers. Its allowed uses should be both server authentication and client authentication.
   - **server_key**: Server private key that complements its certificate for authentication.
+- **restore**: Parameters to restore etcd's data directory from a snapshot in s3 when the vm is first created.
+  - **enabled**: If set to true, the **etcd-backup** (https://github.com/Ferlab-Ste-Justine/etcd-backup) utility will be setup in the vm and will run on creation to restore from a snapshot.
+  - **s3**: Parameters to manage the connection to the S3 store
+    - **endpoint**: Endpoint of the S3 store
+    - **bucket** Bucket where the snapshot is located in the s3 store.
+    - **object_prefix**: Object prefix that is used as part of the snapshot's name (see the documentation of the **etcd-backup** utility for details)
+    - **region**: Region to use in the s3 store
+    - **access_key**: Identification key to use when connecting to the s3 store
+    - **secret_key**: Authentication key to use when connecting to the s3 store
+    - **ca_cert**: Optional CA cert to use to authentify the s3 store's server certificate
+  - **encryption_key**: Master encryption key that should be used to decrypt the encryption key in S3 if the snapshot is encrypted.
+  - **backup_timestamp**: Timestamp of the snapshot to use (see the documentation of the **etcd-backup** utility for details). If empty, the latest snapshot will be used.
 - **chrony**: Optional chrony configuration for when you need a more fine-grained ntp setup on your vm. It is an object with the following fields:
   - **enabled**: If set the false (the default), chrony will not be installed and the vm ntp settings will be left to default.
   - **servers**: List of ntp servers to sync from with each entry containing two properties, **url** and **options** (see: https://chrony.tuxfamily.org/doc/4.2/chrony.conf.html#server)
@@ -79,11 +91,15 @@ This module takes the following variables as input:
     - **hostname**: Unique hostname identifier for the vm
     - **shared_key**: Secret shared key with the remote fluentd node to authentify the client
     - **ca_cert**: CA certificate that signed the remote fluentd node's server certificate (used to authentify it)
+- **fluentbit_dynamic_config**: Optional configuration to update fluent-bit configuration dynamically either from an etcd key prefix or a path in a git repo.
+  - **enabled**: Boolean flag to indicate whether dynamic configuration is enabled at all. If set to true, configurations will be set dynamically. The default configurations can still be referenced as needed by the dynamic configuration. They are at the following paths:
+    - **Global Service Configs**: /etc/fluent-bit-customization/default-config/service.conf
+    - **Default Variables**: /etc/fluent-bit-customization/default-config/default-variables.conf
+    - **Systemd Inputs**: /etc/fluent-bit-customization/default-config/inputs.conf
+    - **Forward Output For All Inputs**: /etc/fluent-bit-customization/default-config/output-all.conf
+    - **Forward Output For Default Inputs Only**: /etc/fluent-bit-customization/default-config/output-default-sources.conf
+  - **source**: Indicates the source of the dynamic config. Can be either **etcd** or **git**.
   - **etcd**: Parameters to fetch fluent-bit configurations dynamically from an etcd cluster. It has the following keys:
-    - **enabled**: If set to true, configurations will be set dynamically. The default configurations can still be referenced as needed by the dynamic configuration. They are at the following paths:
-      - **Global Service Configs**: /etc/fluent-bit-customization/default-config/fluent-bit-service.conf
-      - **Systemd Inputs**: /etc/fluent-bit-customization/default-config/fluent-bit-inputs.conf
-      - **Forward Output**: /etc/fluent-bit-customization/default-config/fluent-bit-output.conf
     - **key_prefix**: Etcd key prefix to search for fluent-bit configuration
     - **endpoints**: Endpoints of the etcd cluster. Endpoints should have the format `<ip>:<port>`
     - **ca_certificate**: CA certificate against which the server certificates of the etcd cluster will be verified for authenticity
@@ -92,6 +108,23 @@ This module takes the following variables as input:
       - **key**: Client private tls key to authentify with. To be used for certificate authentication.
       - **username**: Client's username. To be used for username/password authentication.
       - **password**: Client's password. To be used for username/password authentication.
+    - **vault_agent_secret_path**: Optional vault secret path for an optional vault agent to renew the etcd client credentials. The secret in vault is expected to have the **certificate** and **key** keys if certificate authentication is used or the **username** and **password** keys if password authentication is used.
+  - **git**: Parameters to fetch fluent-bit configurations dynamically from an git repo. It has the following keys:
+    - **repo**: Url of the git repository. It should have the ssh format.
+    - **ref**: Git reference (usually branch) to checkout in the repository
+    - **path**: Path to sync from in the git repository. If the empty string is passed, syncing will happen from the root of the repository.
+    - **trusted_gpg_keys**: List of trusted gpp keys to verify the signature of the top commit. If an empty list is passed, the commit signature will not be verified.
+    - **auth**: Authentication to the git server. It should have the following keys:
+      - **client_ssh_key** Private client ssh key to authentication to the server.
+      - **server_ssh_fingerprint**: Public ssh fingerprint of the server that will be used to authentify it.
+- **vault_agent**: Parameters for the optional vault agent that will be used to manage the dynamic secrets in the vm.
+  - **enabled**: If set to true, a vault agent service will be setup and will run in the vm.
+  - **auth_method**: Auth method the vault agent will use to authenticate with vault. Currently, only approle is supported.
+    - **config**: Configuration parameters for the auth method.
+      - **role_id**: Id of the app role to us.
+      - **secret_id**: Authentication secret to use the app role.
+  - **vault_address**: Endpoint to use to talk to vault.
+  - **vault_ca_cert**: CA certificate to use to validate vault's certificate.
 - **install_dependencies**: Whether cloud-init should install external dependencies (should be set to false if you already provide an image with the external dependencies built-in).
 
 ## Example
@@ -165,7 +198,6 @@ module "etcd_1" {
   memory = tonumber(var.etcd_alpha_memory)
   volume_id = libvirt_volume.etcd_1.id
   libvirt_networks = [{
-    network_id = ""
     network_name = "mynetwork"
     ip = "192.168.121.4"
     mac = "aa:00:00:00:00:00"
@@ -204,7 +236,6 @@ module "etcd_2" {
   memory = tonumber(var.etcd_alpha_memory)
   volume_id = libvirt_volume.etcd_2.id
   libvirt_networks = [{
-    network_id = ""
     network_name = "mynetwork"
     ip = "192.168.121.5"
     mac = "aa:00:00:00:00:01"
@@ -243,7 +274,6 @@ module "etcd_3" {
   memory = tonumber(var.etcd_alpha_memory)
   volume_id = libvirt_volume.etcd_3.id
   libvirt_networks = [{
-    network_id = ""
     network_name = "mynetwork"
     ip = "192.168.121.6"
     mac = "aa:00:00:00:00:02"

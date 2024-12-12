@@ -30,13 +30,13 @@ variable "data_volume_id" {
 variable "libvirt_networks" {
   description = "Parameters of libvirt network connections if a libvirt networks are used."
   type = list(object({
-    network_name = string
-    network_id = string
+    network_name = optional(string, "")
+    network_id = optional(string, "")
     prefix_length = string
     ip = string
     mac = string
-    gateway = string
-    dns_servers = list(string)
+    gateway = optional(string, "")
+    dns_servers = optional(list(string), [])
   }))
   default = []
 }
@@ -48,8 +48,8 @@ variable "macvtap_interfaces" {
     prefix_length = string
     ip            = string
     mac           = string
-    gateway       = string
-    dns_servers   = list(string)
+    gateway       = optional(string, "")
+    dns_servers   = optional(list(string), [])
   }))
   default = []
 }
@@ -86,11 +86,11 @@ variable "ssh_admin_public_key" {
 variable "etcd" {
   description = "Etcd parameters"
   type        = object({
-    auto_compaction_mode       = string,
-    auto_compaction_retention  = string,
-    space_quota                = number,
-    grpc_gateway_enabled       = bool,
-    client_cert_auth           = bool,
+    auto_compaction_mode       = optional(string, "revision"),
+    auto_compaction_retention  = optional(string, "1000"),
+    space_quota                = optional(number, 8*1024*1024*1024),
+    grpc_gateway_enabled       = optional(bool, false),
+    client_cert_auth           = optional(bool, true)
   })
   default = {
     auto_compaction_mode      = "revision"
@@ -98,6 +98,38 @@ variable "etcd" {
     space_quota               = 8*1024*1024*1024
     grpc_gateway_enabled      = false
     client_cert_auth          = true
+  }
+}
+
+variable "restore" {
+  description = "Parameters to restore from an S3 backup when the vm is first created"
+  type        = object({
+    enabled = bool,
+    s3 = object({
+        endpoint      = string,
+        bucket        = string,
+        object_prefix = string,
+        region        = string,
+        access_key = string,
+        secret_key = string,
+        ca_cert       = optional(string, "")
+    }),
+    encryption_key = optional(string, "")
+    backup_timestamp = optional(string, "")
+  })
+  default = {
+    enabled = false
+    s3 = {
+        endpoint      = ""
+        bucket        = ""
+        object_prefix = ""
+        region        = ""
+        access_key = ""
+        secret_key = ""
+        ca_cert       = ""
+    }
+    encryption_key = ""
+    backup_timestamp = ""
   }
 }
 
@@ -116,7 +148,7 @@ variable "authentication_bootstrap" {
 variable "cluster" {
   description = "Etcd cluster parameters"
   type        = object({
-    is_initializing = bool,
+    is_initializing = optional(bool, false),
     initial_token   = string,
     initial_members = list(object({
       ip   = string,
@@ -172,9 +204,12 @@ variable "fluentbit" {
     enabled = bool
     etcd_tag = string
     node_exporter_tag = string
-    metrics = object({
+    metrics = optional(object({
       enabled = bool
       port    = number
+    }), {
+      enabled = false
+      port = 0
     })
     forward = object({
       domain = string
@@ -182,18 +217,6 @@ variable "fluentbit" {
       hostname = string
       shared_key = string
       ca_cert = string
-    })
-    etcd = object({
-      enabled = bool
-      key_prefix = string
-      endpoints = list(string)
-      ca_certificate = string
-      client = object({
-        certificate = string
-        key = string
-        username = string
-        password = string
-      })
     })
   })
   default = {
@@ -211,18 +234,112 @@ variable "fluentbit" {
       shared_key = ""
       ca_cert = ""
     }
-    etcd = {
-      enabled = false
-      key_prefix = ""
-      endpoints = []
-      ca_certificate = ""
-      client = {
-        certificate = ""
-        key = ""
-        username = ""
-        password = ""
+  }
+}
+
+variable "vault_agent" {
+  type = object({
+    enabled = bool
+    auth_method = object({
+      config = object({
+        role_id   = string
+        secret_id = string
+      })
+    })
+    vault_address   = string
+    vault_ca_cert   = string
+  })
+  default = {
+    enabled = false
+    auth_method = {
+      config = {
+        role_id   = ""
+        secret_id = ""
       }
     }
+    vault_address = ""
+    vault_ca_cert = ""
+  }
+}
+
+variable "fluentbit_dynamic_config" {
+  description = "Parameters for fluent-bit dynamic config if it is enabled"
+  type = object({
+    enabled = bool
+    source  = string
+    etcd    = optional(object({
+      key_prefix     = string
+      endpoints      = list(string)
+      ca_certificate = string
+      client         = object({
+        certificate = string
+        key         = string
+        username    = string
+        password    = string
+      })
+      vault_agent_secret_path = optional(string, "")
+    }), {
+      key_prefix     = ""
+      endpoints      = []
+      ca_certificate = ""
+      client         = {
+        certificate = ""
+        key         = ""
+        username    = ""
+        password    = ""
+      }
+      vault_agent_secret_path = ""
+    })
+    git     = optional(object({
+      repo             = string
+      ref              = string
+      path             = string
+      trusted_gpg_keys = list(string)
+      auth             = object({
+        client_ssh_key         = string
+        server_ssh_fingerprint = string
+      })
+    }), {
+      repo             = ""
+      ref              = ""
+      path             = ""
+      trusted_gpg_keys = []
+      auth             = {
+        client_ssh_key         = ""
+        server_ssh_fingerprint = ""
+      }
+    })
+  })
+  default = {
+    enabled = false
+    source = "etcd"
+    etcd = {
+      key_prefix     = ""
+      endpoints      = []
+      ca_certificate = ""
+      client         = {
+        certificate = ""
+        key         = ""
+        username    = ""
+        password    = ""
+      }
+      vault_agent_secret_path = ""
+    }
+    git  = {
+      repo             = ""
+      ref              = ""
+      path             = ""
+      trusted_gpg_keys = []
+      auth             = {
+        client_ssh_key         = ""
+        server_ssh_fingerprint = ""
+      }
+    }
+  }
+
+  validation {
+    condition     = contains(["etcd", "git"], var.fluentbit_dynamic_config.source)
+    error_message = "fluentbit_dynamic_config.source must be 'etcd' or 'git'."
   }
 }
 
